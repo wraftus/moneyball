@@ -2,6 +2,7 @@ import os
 import json
 import sqlite3
 from dataclasses import dataclass
+import argparse
 
 import statsapi
 
@@ -31,13 +32,13 @@ def fetch_seasons_games(season : int):
 def fetch_season_rosters(season : int, team_ids : set[int]):
     team_rosters = dict()
     for idx, team_id in enumerate(team_ids):
-        print(f"\rFetching team roster {(idx + 1):2d}/{len(team_ids):2d} ...", end="")
+        print(f"\rFetching team roster {(idx + 1):2d}/{len(team_ids):2d} for {season}...", end="")
         api_res = statsapi.get("team_roster", {'teamId': team_id, "season": season})
         team_rosters[team_id] = [player['person']['id'] for player in api_res['roster']]
     print()
     return team_rosters
 
-PLAYER_DATADEF_FILE = os.path.join(os.path.dirname(__file__), "player_datadef.json")
+PLAYER_DATADEF_FILE = os.path.join(os.path.dirname(__file__), "data/player_datadef.json")
 def fetch_players_career_stats(player_ids : set[int]):
     player_stats = dict()
     # fetch the data for each player
@@ -70,7 +71,7 @@ class Database:
     con : sqlite3.Connection
     cur : sqlite3.Cursor
 
-    DEFAULT_DB_NAME = "mlb_stats.db"
+    DEFAULT_DB_NAME = os.path.join(os.path.dirname(__file__), "data/mlb_stats.db")
     @classmethod # spawn a Database from a db file
     def from_db_file(cls, filepath):
         con = sqlite3.connect(filepath)
@@ -191,3 +192,8 @@ def query_team_rosters(db : Database, season : int):
         team_rosters[team_id] = filtered_roster
     return team_rosters
 
+#######################################
+############# DATABASE CLI #############
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
